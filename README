@@ -1,0 +1,15 @@
+## Synopsis
+
+this repo contains a simple navigator in an ISO file.
+
+## Motivation
+
+Upgrade my C skill, understand how ISO file works and get a good grade.
+
+## Usage
+
+my_read_iso [file] [< commands]
+
+## Tests
+
+
