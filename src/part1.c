@@ -7,18 +7,34 @@
 #include <unistd.h>
 
 
-int checkiso(char *path);
+int checkiso(int iso, char **argv, struct iso_prim_voldesc *v)
+{
+  if (iso == -1)
+  {
+    printf("%s: %s: No such file directory\n", argv[0], argv[1]);
+    return 1;
+  }
+  struct stat st;
+  fstat(iso, &st);
+  v = mmap()//struct en param
+  if (st.st_size < 2041 || 1)//TODO 2nd cond
+  {
+    printf("%s: %s: invalid ISO9660 file\n");
+    return 1;
+  }
+  return 0;
+}
 
 void show_help(void)
 {
-  printf("help  : display command help\n");
-  printf("info  : display volume info\n");
-  printf("ls    : display directory content\n");
-  printf("cd    : change current directory\n");
-  printf("tree  : display the tree of the current directory\n");
-  printf("get   : copy file to local directory\n");
-  printf("cat   : display file content\n");
-  printf("quit  : program exit\n");
+  printf("help\t: display command help\n");
+  printf("info\t: display volume info\n");
+  printf("ls\t: display directory content\n");
+  printf("cd\t: change current directory\n");
+  printf("tree\t: display the tree of the current directory\n");
+  printf("get\t: copy file to local directory\n");
+  printf("cat\t: display file content\n");
+  printf("quit\t: program exit\n");
 }
 
 void interactive(void)
@@ -38,7 +54,6 @@ int runfile(int iso, int piped, char *buff)
   printf("I should run the file\n");
   struct stat st;
   fstat(piped, &st);
-  iso += 1;//del
   //size_t fsize = st.st_size;
   //char *instr = mmap()
   return 0;
@@ -47,11 +62,15 @@ int runfile(int iso, int piped, char *buff)
 int main(int argc, char **argv)
 {
   if (argc != 2)
+  {
+    printf("usage: %s FILE\n", argv[0]);
     return 1;
   if (argc == 2)
   {
     char buff[255] = "";
     int iso = open(argv[1], O_RDONLY);
+    if (checkiso(iso, argv))
+      return 1;
     if (read(STDIN_FILENO, buff, 255) != 0)
     {
       fflush(stdin);
