@@ -5,6 +5,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/mman.h>
+#include <string.h>
+#include "iso9660.h"
 
 
 int checkiso(int iso, char **argv, struct iso_prim_voldesc *v)
@@ -16,10 +19,14 @@ int checkiso(int iso, char **argv, struct iso_prim_voldesc *v)
   }
   struct stat st;
   fstat(iso, &st);
-  v = mmap()//struct en param
-  if (st.st_size < 2041 || 1)//TODO 2nd cond
+  size_t size = st.st_size;
+  v = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, iso, 16 * ISO_BLOCK_SIZE);
+  if (!v)
+    return 1;
+  if (size < sizeof (struct iso_prim_voldesc)
+      || strncmp(v->std_identifier, "CD001", 5))
   {
-    printf("%s: %s: invalid ISO9660 file\n");
+    printf("%s: %s: invalid ISO9660 file size\n", argv[0], argv[1]);
     return 1;
   }
   return 0;
@@ -65,11 +72,13 @@ int main(int argc, char **argv)
   {
     printf("usage: %s FILE\n", argv[0]);
     return 1;
+  }
   if (argc == 2)
   {
     char buff[255] = "";
     int iso = open(argv[1], O_RDONLY);
-    if (checkiso(iso, argv))
+    struct iso_prim_voldesc *v = NULL;
+    if (checkiso(iso, argv, v))
       return 1;
     if (read(STDIN_FILENO, buff, 255) != 0)
     {
