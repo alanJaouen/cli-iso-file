@@ -25,12 +25,12 @@ void show_help(void)
   printf("quit\t: program exit\n");
 }
 
-void exec(char *str)
+void exec(char *str, struct iso_prim_voldesc *v)
 {
   if (!strcmp(str, "help"))
     show_help();
   else if (!strcmp(str, "info"))
-    printf("do info\n");
+    info(v);
   else if (!strcmp(str, "ls"))
     printf("do ls\n");
   else if (!strcmp(str, "cd"))
@@ -45,7 +45,7 @@ void exec(char *str)
     warnx("my_read_iso: %s: unknown command", str);
 }
 
-int checkiso(int iso, char **argv, struct iso_prim_voldesc *v)
+int checkiso(int iso, char **argv, struct iso_prim_voldesc **v)
 {
   if (iso == -1)
   {
@@ -55,11 +55,11 @@ int checkiso(int iso, char **argv, struct iso_prim_voldesc *v)
   struct stat st;
   fstat(iso, &st);
   size_t size = st.st_size;
-  v = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, iso, 16 * ISO_BLOCK_SIZE);
-  if (!v)
+  *v = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, iso, 16 * ISO_BLOCK_SIZE);
+  if (!(*v))
     return 1;
   if (size < sizeof (struct iso_prim_voldesc)
-      || strncmp(v->std_identifier, "CD001", 5))
+      || strncmp((*v)->std_identifier, "CD001", 5))
   {
     warnx("%s: %s: invalid ISO9660 file size", argv[0], argv[1]);
     return 1;
@@ -67,7 +67,7 @@ int checkiso(int iso, char **argv, struct iso_prim_voldesc *v)
   return 0;
 }
 
-void interactive(void)
+void interactive(struct iso_prim_voldesc *v)
 {
   while (1)
   {
@@ -78,7 +78,7 @@ void interactive(void)
     removereturn(buff);
     if (!strcmp(buff, "quit"))
       return;
-    exec(buff);
+    exec(buff, v);
     *buff = '\0';
   }
 }
@@ -102,8 +102,10 @@ int main(int argc, char **argv)
   {
     int iso = open(argv[1], O_RDONLY);
     struct iso_prim_voldesc *v = NULL;
-    if (checkiso(iso, argv, v))
+    if (checkiso(iso, argv, &v))
       return 1;
+    if (v == NULL)
+      printf("non\n");
     struct stat st;
     fstat(STDIN_FILENO, &st);
     if (st.st_size != 0)
@@ -113,13 +115,13 @@ int main(int argc, char **argv)
       fflush(stdin);
       printf("size = %zu piped:\n%smyEOF\n",st.st_size,  buff);//return 3;
       int piped = open(buff,  O_RDONLY);
-      if (iso && !isatty(STDIN_FILENO))
+      if (iso != -1)
         runfile(iso, piped, buff);
       else
-        interactive();
+        interactive(v);
     }
-    else if (iso != -1)
-      interactive();
+    else if (iso != -1 && isatty(STDIN_FILENO))
+      interactive(v);
     else
       return 1;
   }

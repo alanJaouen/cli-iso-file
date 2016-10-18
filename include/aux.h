@@ -3,4 +3,6 @@
 
 void removereturn(char *s);
 
+void info(struct iso_prim_voldesc *v);
+
 #endif /* !AUX_H */
