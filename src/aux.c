@@ -31,3 +31,28 @@ void info(struct iso_prim_voldesc *v)
   printf("\n");
 
 }
+
+void dispay_name(struct iso_dir *d)
+{
+  uint8_t *a = &(d->idf_len) + 1;
+  void *p = a;
+  char *c = p;
+  printf("s=%u\n", d->idf_len);
+  for (uint32_t i = 0; i < d->idf_len; ++i)
+  {
+    printf("%c\n", c[i]);
+  }
+}
+
+void ls(struct iso_dir *d, struct iso_prim_voldesc *v)
+{
+  void *p = v;
+  char *c = p;
+  c = c + ISO_BLOCK_SIZE * d->data_blk.le;
+  p = c;
+  struct iso_path_table_le *i = p;
+  p = i->data_blk;
+  struct iso_dir *d =
+
+  printf("%c\n", c);
+}

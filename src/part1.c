@@ -25,14 +25,14 @@ void show_help(void)
   printf("quit\t: program exit\n");
 }
 
-void exec(char *str, struct iso_prim_voldesc *v)
+void exec(char *str, struct iso_prim_voldesc *v, struct iso_dir *d)
 {
   if (!strcmp(str, "help"))
     show_help();
   else if (!strcmp(str, "info"))
     info(v);
   else if (!strcmp(str, "ls"))
-    printf("do ls\n");
+    ls(d, v);
   else if (!strcmp(str, "cd"))
     printf("do cd\n");
   else if (!strcmp(str, "tree"))
@@ -69,6 +69,7 @@ int checkiso(int iso, char **argv, struct iso_prim_voldesc **v)
 
 void interactive(struct iso_prim_voldesc *v)
 {
+  struct iso_dir *d = &(v->root_dir);
   while (1)
   {
     char buff[255] = "";
@@ -78,7 +79,7 @@ void interactive(struct iso_prim_voldesc *v)
     removereturn(buff);
     if (!strcmp(buff, "quit"))
       return;
-    exec(buff, v);
+    exec(buff, v, d);
     *buff = '\0';
   }
 }
