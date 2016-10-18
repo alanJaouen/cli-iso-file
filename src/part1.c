@@ -7,30 +7,11 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <string.h>
+#include <err.h>
 #include "iso9660.h"
+#include "aux.h"
 
 
-int checkiso(int iso, char **argv, struct iso_prim_voldesc *v)
-{
-  if (iso == -1)
-  {
-    printf("%s: %s: No such file directory\n", argv[0], argv[1]);
-    return 1;
-  }
-  struct stat st;
-  fstat(iso, &st);
-  size_t size = st.st_size;
-  v = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, iso, 16 * ISO_BLOCK_SIZE);
-  if (!v)
-    return 1;
-  if (size < sizeof (struct iso_prim_voldesc)
-      || strncmp(v->std_identifier, "CD001", 5))
-  {
-    printf("%s: %s: invalid ISO9660 file size\n", argv[0], argv[1]);
-    return 1;
-  }
-  return 0;
-}
 
 void show_help(void)
 {
@@ -44,23 +25,67 @@ void show_help(void)
   printf("quit\t: program exit\n");
 }
 
+void exec(char *str)
+{
+  if (!strcmp(str, "help"))
+    show_help();
+  else if (!strcmp(str, "info"))
+    printf("do info\n");
+  else if (!strcmp(str, "ls"))
+    printf("do ls\n");
+  else if (!strcmp(str, "cd"))
+    printf("do cd\n");
+  else if (!strcmp(str, "tree"))
+    printf("do tree\n");
+  else if (!strcmp(str, "get"))
+    printf("do get\n");
+  else if (!strcmp(str, "cat"))
+    printf("do cat\n");
+  else
+    warnx("my_read_iso: %s: unknown command", str);
+}
+
+int checkiso(int iso, char **argv, struct iso_prim_voldesc *v)
+{
+  if (iso == -1)
+  {
+    warnx("%s: %s: No such file directory", argv[0], argv[1]);
+    return 1;
+  }
+  struct stat st;
+  fstat(iso, &st);
+  size_t size = st.st_size;
+  v = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, iso, 16 * ISO_BLOCK_SIZE);
+  if (!v)
+    return 1;
+  if (size < sizeof (struct iso_prim_voldesc)
+      || strncmp(v->std_identifier, "CD001", 5))
+  {
+    warnx("%s: %s: invalid ISO9660 file size", argv[0], argv[1]);
+    return 1;
+  }
+  return 0;
+}
+
 void interactive(void)
 {
-  char buff[255] = "";
   while (1)
   {
+    char buff[255] = "";
     printf(">");
     fflush(stdout);
     read(STDIN_FILENO, buff, 255);
-    printf("buff = %s\n", buff);
+    removereturn(buff);
+    if (!strcmp(buff, "quit"))
+      return;
+    exec(buff);
+    *buff = '\0';
   }
 }
 
 int runfile(int iso, int piped, char *buff)
 {
   printf("I should run the file\n");
-  struct stat st;
-  fstat(piped, &st);
   //size_t fsize = st.st_size;
   //char *instr = mmap()
   return 0;
@@ -70,20 +95,23 @@ int main(int argc, char **argv)
 {
   if (argc != 2)
   {
-    printf("usage: %s FILE\n", argv[0]);
+    warnx("usage: %s FILE", argv[0]);
     return 1;
   }
   if (argc == 2)
   {
-    char buff[255] = "";
     int iso = open(argv[1], O_RDONLY);
     struct iso_prim_voldesc *v = NULL;
     if (checkiso(iso, argv, v))
       return 1;
-    if (read(STDIN_FILENO, buff, 255) != 0)
+    struct stat st;
+    fstat(STDIN_FILENO, &st);
+    if (st.st_size != 0)
     {
+      char buff[st.st_size];
+      read(STDIN_FILENO, &buff,  st.st_size);
       fflush(stdin);
-      printf("piped: %s\n", buff);//return 3;
+      printf("size = %zu piped:\n%smyEOF\n",st.st_size,  buff);//return 3;
       int piped = open(buff,  O_RDONLY);
       if (iso && !isatty(STDIN_FILENO))
         runfile(iso, piped, buff);
