@@ -69,7 +69,11 @@ int checkiso(int iso, char **argv, struct iso_prim_voldesc **v)
 
 void interactive(struct iso_prim_voldesc *v)
 {
-  struct iso_dir *d = &(v->root_dir);
+  void *p = v;
+  char *c = p;
+  c += (v->root_dir.data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
+  p = c;
+  struct iso_dir *d = p;
   while (1)
   {
     char buff[255] = "";

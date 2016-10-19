@@ -32,27 +32,33 @@ void info(struct iso_prim_voldesc *v)
 
 }
 
-void dispay_name(struct iso_dir *d)
+void print_name(struct iso_dir *d)
 {
-  uint8_t *a = &(d->idf_len) + 1;
-  void *p = a;
+  void *p = &(d->idf_len) + 1;
   char *c = p;
-  printf("s=%u\n", d->idf_len);
-  for (uint32_t i = 0; i < d->idf_len; ++i)
-  {
-    printf("%c\n", c[i]);
-  }
+  uint8_t pad = 0;
+  if (d->type != ISO_FILE_ISDIR)
+    pad = 2;
+  if (d->idf_len == 1 && *c == '\0')
+    printf(".");
+  else if (d->idf_len == 1 && *c == 1)
+    printf("..");
+  else
+    for (int i = 0; i < d->idf_len - pad; i++)
+      printf("%c", c[i]);
+  printf("\n");
 }
 
 void ls(struct iso_dir *d, struct iso_prim_voldesc *v)
 {
-  void *p = v;
-  char *c = p;
-  c = c + ISO_BLOCK_SIZE * d->data_blk.le;
-  p = c;
-  struct iso_path_table_le *i = p;
-  p = i->data_blk;
-  struct iso_dir *d =
-
-  printf("%c\n", c);
+  struct iso_dir *dir = d;
+  while (dir->dir_size > 0)
+  {
+    print_name(dir);
+    p = dir;
+    c = p;
+    c = c + dir->dir_size;
+    p = c;
+    dir = p;
+  }
 }
