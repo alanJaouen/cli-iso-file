@@ -64,7 +64,7 @@ void exec(char *str, struct iso_prim_voldesc *v, struct iso_dir **d,
   }
   else if (!strcmp(str, "tree"))
     tree(*d, "", v);
-  else if (!strcmp(str, "get "))
+  else if (!strncmp(str, "get ", 4))
     get(*d, str + 4, v);
   else if (!strncmp(str, "cat ", 4))
     cat(*d, str + 4, v);

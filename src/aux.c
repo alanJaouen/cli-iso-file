@@ -4,6 +4,7 @@
 #include <err.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include "iso9660.h"
 
@@ -197,21 +198,17 @@ void get(struct iso_dir *d, char *s, struct iso_prim_voldesc *v)
   struct iso_dir *f = get_file(d, s);
   if (!f)
   {
-    warnx("file '%s' doesn't exist", s); //TODO check
+    warnx("unable to find '%s' entry", s);
     return;
   }
-  if (d->type != 0 && d->type != 1)
+  if (d->type != 0 && d->type != 1 && 0)
   {
-    warnx("file '%s' is not a file", s); //TODO check
+    warnx("entry '%s' is a directory", s);
     return;
   }
-  char name[255];
-  get_name(d, s);
-  int fd = open(name, O_CREAT|O_TRUNC|O_WRONLY);//TODO CHECK SYSCALL AND WRITE
+  int fd = open(s, O_CREAT|O_TRUNC|O_WRONLY, 0666);
   void *p = v;
   char *c = p;
   c += (f->data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
-  for (uint32_t i = 0; i < f->file_size.le; ++i)
-    printf("%c", c[i]);
-  printf("\n");
+  write(fd, c, f->file_size.le);
 }

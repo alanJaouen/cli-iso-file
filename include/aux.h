@@ -14,4 +14,6 @@ void cat(struct iso_dir *d, char *s, struct iso_prim_voldesc *v);
 
 void tree(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v);
 
+void get(struct iso_dir *d, char *s, struct iso_prim_voldesc *v);
+
 #endif /* !AUX_H */
