@@ -101,7 +101,7 @@ struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v)
       c = p;
       c += (d->data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
       p = c;
-      printf("Changing to '%s' directory\n", s);
+      printf("Changing to '%s' directory\n", s);//TODO check that
       return p;
     }
     p = d;

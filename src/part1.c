@@ -36,7 +36,16 @@ struct iso_dir *move_to_root(struct iso_prim_voldesc *v)
   return d;
 }
 
-void exec(char *str, struct iso_prim_voldesc *v, struct iso_dir **d)
+void swap(struct iso_dir **a, struct iso_dir **b)
+{
+  printf("changing to '' directory\n"); //TODO set name
+  struct iso_dir *tmp = *a;
+  *a = *b;
+  *b = tmp;
+}
+
+void exec(char *str, struct iso_prim_voldesc *v, struct iso_dir **d,
+   struct iso_dir **oldd)
 {
   if (!strcmp(str, "help"))
     show_help();
@@ -44,6 +53,8 @@ void exec(char *str, struct iso_prim_voldesc *v, struct iso_dir **d)
     info(v);
   else if (!strcmp(str, "ls"))
     ls(*d);
+  else if (!strcmp(str,  "cd -"))
+    swap(d, oldd);
   else if (!strncmp(str, "cd ", 3))
     *d = cd(*d, str + 3, v);
   else if (!strcmp(str, "cd"))
@@ -86,6 +97,7 @@ int checkiso(int iso, char **argv, struct iso_prim_voldesc **v)
 void interactive(struct iso_prim_voldesc *v)
 {
   struct iso_dir *d = move_to_root(v);
+  struct iso_dir *oldd = d; //TODO test that
   while (1)
   {
     char buff[255] = "";
@@ -95,7 +107,7 @@ void interactive(struct iso_prim_voldesc *v)
     removereturn(buff);
     if (!strcmp(buff, "quit"))
       return;
-    exec(buff, v, &d);
+    exec(buff, v, &d, &oldd);
     *buff = '\0';
   }
 }
