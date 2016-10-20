@@ -59,7 +59,7 @@ void ls(struct iso_dir *d)
   {
     char name[255];
     get_name(d, name);
-    printf("%s\n", name);
+    printf("%s type = %u\n", name, d->type);
     void *p = d;
     char *c = p;
     c = c + d->dir_size;
@@ -68,22 +68,23 @@ void ls(struct iso_dir *d)
   }
 }
 
+
 struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v)
 {
   struct iso_dir *d = dir;
   while (d->dir_size > 0)
   {
-    if (strlen(s) == d->idf_len)
+    if (d->type == ISO_FILE_ISDIR)
     {
       void *p = &(d->idf_len) + 1;
       char *c = p;
-      if (!strncmp(c, s, d->idf_len))
+      char name[255];
+      get_name(d, name);
+      if (!strcmp(name, s))
       {
-        printf("FIND\n");
         p = v;
         c = p;
-        printf("on jump a %u\n", d->data_blk.le);
-        c += (d->data_blk.le - 16) * 2048;
+        c += (d->data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
         p = c;
         return p;
       }
@@ -94,7 +95,7 @@ struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v)
     p = c;
     d = p;
   }
-  printf("non\n");
+  printf("non\n");//TODO err msg
 
   return dir;
 
