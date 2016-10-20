@@ -10,4 +10,8 @@ void ls(struct iso_dir *d);
 
 struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v);
 
+void cat(struct iso_dir *d, char *s, struct iso_prim_voldesc *v);
+
+void tree(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v);
+
 #endif /* !AUX_H */

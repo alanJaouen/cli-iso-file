@@ -63,11 +63,11 @@ void exec(char *str, struct iso_prim_voldesc *v, struct iso_dir **d,
     *d = move_to_root(v);
   }
   else if (!strcmp(str, "tree"))
-    printf("do tree\n");
-  else if (!strcmp(str, "get"))
-    printf("do get\n");
-  else if (!strcmp(str, "cat"))
-    printf("do cat\n");
+    tree(*d, "", v);
+  else if (!strcmp(str, "get "))
+    get(*d, str + 4, v);
+  else if (!strncmp(str, "cat ", 4))
+    cat(*d, str + 4, v);
   else
     warnx("my_read_iso: %s: unknown command", str);
 }
@@ -101,7 +101,7 @@ void interactive(struct iso_prim_voldesc *v)
   while (1)
   {
     char buff[255] = "";
-    printf(">");
+    printf("> ");
     fflush(stdout);
     read(STDIN_FILENO, buff, 255);
     removereturn(buff);

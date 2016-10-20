@@ -2,6 +2,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <err.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include "iso9660.h"
 
 void removereturn(char *s)
@@ -67,11 +70,11 @@ void ls(struct iso_dir *d)
   {
     char name[255];
     get_name(d, name);
-    char isdir = (d->type == ISO_FILE_ISDIR)? 'd': '-';
-    char ish = (d->type == ISO_FILE_HIDDEN)? 'h': '-';
-    printf("%c%c %9u %04d/%02d/%02d %02d:%02d %s\n",isdir, ish,
+    char isdir = (d->type == ISO_FILE_ISDIR || d->type == 3)? 'd': '-';
+    char ish = (d->type == ISO_FILE_HIDDEN || d->type == 3)? 'h': '-';
+    printf("%c%c %9u %04d/%02d/%02d %02d:%02d %s %u\n",isdir, ish,
        d->file_size.le, 1900 + d->date[0], d->date[1], d->date[2], d->date[3],
-       d->date[4], name);
+       d->date[4], name, d->type);
     void *p = d;
     char *c = p;
     c = c + d->dir_size;
@@ -92,7 +95,7 @@ struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v)
     get_name(d, name);
     if (!strcmp(name, s))
     {
-      if (d->type != ISO_FILE_ISDIR)
+      if (d->type != ISO_FILE_ISDIR && d->type != 3)
       {
         warnx("entry '%s' is not a directory", s);
         return dir;
@@ -112,4 +115,103 @@ struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v)
   }
   warnx("unable to find '%s' directory entry", s);
   return dir;
+}
+
+void strappend(char *dest, char *src)
+{
+  int i = 0;
+  while (dest[i])
+    ++i;
+  int j = 0;
+  while (src[j])
+  {
+    dest[i + j] = src[j];
+    j++;
+  }
+  dest[i + j] = '\0';
+}
+
+struct iso_dir *get_file(struct iso_dir *d, char *s)
+{
+  while (d->dir_size > 20)
+  {
+    char name[255];
+    get_name(d, name);
+    if (!strcmp(name, s))
+      return d;
+    void *p = d;
+    char *c = p;
+    c = c + d->dir_size;
+    p = c;
+    d = p;
+  }
+  return NULL;
+}
+
+void tree(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v)
+{
+  while (d->dir_size > 20)
+  {
+    char name[255];
+    get_name(d, name);
+    printf("%s%s\n", prev, name);
+    if ((d->type == ISO_FILE_ISDIR || d->type == 3) && strcmp(name, ".")
+        && strcmp(name, ".."))
+    {
+      char nprev[255] = "";
+      strappend(nprev, prev);
+      strappend(nprev, "-");
+      tree(cd(d, name, v), nprev, v);
+    }
+    void *p = d;
+    char *c = p;
+    c = c + d->dir_size;
+    p = c;
+    d = p;
+  }
+}
+
+void cat(struct iso_dir *d, char *s, struct iso_prim_voldesc *v)
+{
+  struct iso_dir *f = get_file(d, s);
+  if (!f)
+  {
+    warnx("file '%s' doesn't exist", s); //TODO check
+    return;
+  }
+  if (d->type != 0 && d->type != 1)
+  {
+    warnx("file '%s' is not a file", s); //TODO check
+    return;
+  }
+  void *p = v;
+  char *c = p;
+  c += (f->data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
+  for (uint32_t i = 0; i < f->file_size.le; ++i)
+    printf("%c", c[i]);
+  printf("\n");
+}
+
+void get(struct iso_dir *d, char *s, struct iso_prim_voldesc *v)
+{
+  struct iso_dir *f = get_file(d, s);
+  if (!f)
+  {
+    warnx("file '%s' doesn't exist", s); //TODO check
+    return;
+  }
+  if (d->type != 0 && d->type != 1)
+  {
+    warnx("file '%s' is not a file", s); //TODO check
+    return;
+  }
+  char name[255];
+  get_name(d, s);
+  int fd = open(name, O_CREAT|O_TRUNC|O_WRONLY);//TODO CHECK SYSCALL AND WRITE
+  void *p = v;
+  char *c = p;
+  c += (f->data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
+  for (uint32_t i = 0; i < f->file_size.le; ++i)
+    printf("%c", c[i]);
+  printf("\n");
 }
