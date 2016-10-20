@@ -32,33 +32,70 @@ void info(struct iso_prim_voldesc *v)
 
 }
 
-void print_name(struct iso_dir *d)
+void get_name(struct iso_dir *d, char *str)
 {
   void *p = &(d->idf_len) + 1;
   char *c = p;
   uint8_t pad = 0;
+  int i = 0;
   if (d->type != ISO_FILE_ISDIR)
     pad = 2;
   if (d->idf_len == 1 && *c == '\0')
-    printf(".");
+    str[i++] = '.';
   else if (d->idf_len == 1 && *c == 1)
-    printf("..");
+  {
+    str[i++] = '.';
+    str[i++] = '.';
+  }
   else
-    for (int i = 0; i < d->idf_len - pad; i++)
-      printf("%c", c[i]);
-  printf("\n");
+    for ( ; i < d->idf_len - pad; i++)
+      str[i] = c[i];
+  str[i] = '\0';
 }
 
-void ls(struct iso_dir *d, struct iso_prim_voldesc *v)
+void ls(struct iso_dir *d)
 {
-  struct iso_dir *dir = d;
-  while (dir->dir_size > 0)
+  while (d->dir_size > 0)
   {
-    print_name(dir);
-    p = dir;
-    c = p;
-    c = c + dir->dir_size;
+    char name[255];
+    get_name(d, name);
+    printf("%s\n", name);
+    void *p = d;
+    char *c = p;
+    c = c + d->dir_size;
     p = c;
-    dir = p;
+    d = p;
   }
+}
+
+struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v)
+{
+  struct iso_dir *d = dir;
+  while (d->dir_size > 0)
+  {
+    if (strlen(s) == d->idf_len)
+    {
+      void *p = &(d->idf_len) + 1;
+      char *c = p;
+      if (!strncmp(c, s, d->idf_len))
+      {
+        printf("FIND\n");
+        p = v;
+        c = p;
+        printf("on jump a %u\n", d->data_blk.le);
+        c += (d->data_blk.le - 16) * 2048;
+        p = c;
+        return p;
+      }
+    }
+    void *p = d;
+    char *c = p;
+    c = c + d->dir_size;
+    p = c;
+    d = p;
+  }
+  printf("non\n");
+
+  return dir;
+
 }
