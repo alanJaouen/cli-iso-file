@@ -25,6 +25,17 @@ void show_help(void)
   printf("quit\t: program exit\n");
 }
 
+
+struct iso_dir *move_to_root(struct iso_prim_voldesc *v)
+{
+  void *p = v;
+  char *c = p;
+  c += (v->root_dir.data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
+  p = c;
+  struct iso_dir *d = p;
+  return d;
+}
+
 void exec(char *str, struct iso_prim_voldesc *v, struct iso_dir **d)
 {
   if (!strcmp(str, "help"))
@@ -35,6 +46,11 @@ void exec(char *str, struct iso_prim_voldesc *v, struct iso_dir **d)
     ls(*d);
   else if (!strncmp(str, "cd ", 3))
     *d = cd(*d, str + 3, v);
+  else if (!strcmp(str, "cd"))
+  {
+    printf("changing to '/' directory\n");//TODO check that
+    *d = move_to_root(v);
+  }
   else if (!strcmp(str, "tree"))
     printf("do tree\n");
   else if (!strcmp(str, "get"))
@@ -69,11 +85,7 @@ int checkiso(int iso, char **argv, struct iso_prim_voldesc **v)
 
 void interactive(struct iso_prim_voldesc *v)
 {
-  void *p = v;
-  char *c = p;
-  c += (v->root_dir.data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
-  p = c;
-  struct iso_dir *d = p;
+  struct iso_dir *d = move_to_root(v);
   while (1)
   {
     char buff[255] = "";

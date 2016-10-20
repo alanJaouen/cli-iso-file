@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
+#include <err.h>
 #include "iso9660.h"
 
 void removereturn(char *s)
@@ -85,29 +86,30 @@ struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v)
   struct iso_dir *d = dir;
   while (d->dir_size > 0)
   {
-    if (d->type == ISO_FILE_ISDIR)
-    {
-      void *p = &(d->idf_len) + 1;
-      char *c = p;
-      char name[255];
-      get_name(d, name);
-      if (!strcmp(name, s))
-      {
-        p = v;
-        c = p;
-        c += (d->data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
-        p = c;
-        return p;
-      }
-    }
-    void *p = d;
+    void *p = &(d->idf_len) + 1;
     char *c = p;
+    char name[255];
+    get_name(d, name);
+    if (!strcmp(name, s))
+    {
+      if (d->type != ISO_FILE_ISDIR)
+      {
+        warnx("entry '%s' is not a directory", s);
+        return dir;
+      }
+      p = v;
+      c = p;
+      c += (d->data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
+      p = c;
+      printf("Changing to '%s' directory\n", s);
+      return p;
+    }
+    p = d;
+    c = p;
     c = c + d->dir_size;
     p = c;
     d = p;
   }
-  printf("non\n");//TODO err msg
-
+  warnx("unable to find '%s' directory entry", s);
   return dir;
-
 }
