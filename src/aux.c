@@ -36,10 +36,7 @@ void get_name(struct iso_dir *d, char *str)
 {
   void *p = &(d->idf_len) + 1;
   char *c = p;
-  uint8_t pad = 0;
   int i = 0;
-  if (d->type != ISO_FILE_ISDIR)
-    pad = 2;
   if (d->idf_len == 1 && *c == '\0')
     str[i++] = '.';
   else if (d->idf_len == 1 && *c == 1)
@@ -48,18 +45,32 @@ void get_name(struct iso_dir *d, char *str)
     str[i++] = '.';
   }
   else
-    for ( ; i < d->idf_len - pad; i++)
+    for ( ; i < d->idf_len; i++)
+    {
+      if (i == d->idf_len - 2 && c[i] == ';')
+        break;
       str[i] = c[i];
+    }
   str[i] = '\0';
+}
+
+int get_year(char *str)
+{
+  printf("%d%d\n", str[4], str[5]);
+  return str[4] * 10 + str[5];
 }
 
 void ls(struct iso_dir *d)
 {
-  while (d->dir_size > 0)
+  while (d->dir_size > 20)
   {
     char name[255];
     get_name(d, name);
-    printf("%s type = %u\n", name, d->type);
+    char isdir = (d->type == ISO_FILE_ISDIR)? 'd': '-';
+    char ish = (d->type == ISO_FILE_HIDDEN)? 'h': '-';
+    printf("%c%c %9u %04d/%02d/%02d %02d:%02d %s\n",isdir, ish,
+       d->file_size.le, 1900 + d->date[0], d->date[1], d->date[2], d->date[3],
+       d->date[4], name);
     void *p = d;
     char *c = p;
     c = c + d->dir_size;
