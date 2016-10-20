@@ -105,7 +105,7 @@ struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v)
       c = p;
       c += (d->data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
       p = c;
-      printf("Changing to '%s' directory\n", s);//TODO check that
+      printf("Changing to '%s' directory\n", s);
       return p;
     }
     p = d;
@@ -180,7 +180,7 @@ void cat(struct iso_dir *d, char *s, struct iso_prim_voldesc *v)
     warnx("file '%s' doesn't exist", s); //TODO check
     return;
   }
-  if (d->type != 0 && d->type != 1)
+  if (f->type != 0 && f->type != 1)
   {
     warnx("file '%s' is not a file", s); //TODO check
     return;
@@ -190,7 +190,6 @@ void cat(struct iso_dir *d, char *s, struct iso_prim_voldesc *v)
   c += (f->data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
   for (uint32_t i = 0; i < f->file_size.le; ++i)
     printf("%c", c[i]);
-  printf("\n");
 }
 
 void get(struct iso_dir *d, char *s, struct iso_prim_voldesc *v)
@@ -201,7 +200,7 @@ void get(struct iso_dir *d, char *s, struct iso_prim_voldesc *v)
     warnx("unable to find '%s' entry", s);
     return;
   }
-  if (d->type != 0 && d->type != 1 && 0)
+  if (f->type != 0 && f->type != 1)
   {
     warnx("entry '%s' is a directory", s);
     return;

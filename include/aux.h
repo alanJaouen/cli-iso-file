@@ -16,4 +16,6 @@ void tree(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v);
 
 void get(struct iso_dir *d, char *s, struct iso_prim_voldesc *v);
 
+void get_name(struct iso_dir *d, char *str);
+
 #endif /* !AUX_H */

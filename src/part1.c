@@ -12,6 +12,26 @@
 #include "aux.h"
 
 
+char *clean(char *s)
+{
+  int i = 0;
+  while (s[i] == ' ' || s[i] == '\t')
+    i++;
+  return s + i;
+}
+
+int clean2(char *s)
+{
+  int si = 0;
+  while (s[si])
+    si++;
+  int i = 0;
+  while ((s[i] >= 'a' && s[i] <= 'z') || (s[i] >= 'A' && s[i] <='Z'))
+    i++;
+  while (s[i] == ' ' || s[i] == '\t')
+    i++;
+  return (i == si);
+}
 
 void show_help(void)
 {
@@ -38,7 +58,9 @@ struct iso_dir *move_to_root(struct iso_prim_voldesc *v)
 
 void swap(struct iso_dir **a, struct iso_dir **b)
 {
-  printf("changing to '' directory\n"); //TODO set name
+  char n[255];
+  get_name(*b, n);
+  printf("changing to '%s' directory\n", n);
   struct iso_dir *tmp = *a;
   *a = *b;
   *b = tmp;
@@ -47,19 +69,19 @@ void swap(struct iso_dir **a, struct iso_dir **b)
 void exec(char *str, struct iso_prim_voldesc *v, struct iso_dir **d,
    struct iso_dir **oldd)
 {
-  if (!strcmp(str, "help"))
+  if (!strncmp(str, "help", 4) && clean2(str))
     show_help();
-  else if (!strcmp(str, "info"))
+  else if (!strcmp(str, "info") && clean2(str))
     info(v);
-  else if (!strcmp(str, "ls"))
+  else if (!strcmp(str, "ls") && clean2(str))
     ls(*d);
   else if (!strcmp(str,  "cd -"))
     swap(d, oldd);
   else if (!strncmp(str, "cd ", 3))
     *d = cd(*d, str + 3, v);
-  else if (!strcmp(str, "cd"))
+  else if (!strcmp(str, "cd\0"))
   {
-    printf("changing to '/' directory\n");//TODO check that
+    printf("changing to 'root dir' directory\n");
     *d = move_to_root(v);
   }
   else if (!strcmp(str, "tree"))
@@ -94,10 +116,11 @@ int checkiso(int iso, char **argv, struct iso_prim_voldesc **v)
   return 0;
 }
 
+
 void interactive(struct iso_prim_voldesc *v)
 {
   struct iso_dir *d = move_to_root(v);
-  struct iso_dir *oldd = d; //TODO test that
+  struct iso_dir *oldd = d;
   while (1)
   {
     char buff[255] = "";
@@ -107,7 +130,7 @@ void interactive(struct iso_prim_voldesc *v)
     removereturn(buff);
     if (!strcmp(buff, "quit"))
       return;
-    exec(buff, v, &d, &oldd);
+    exec(clean(buff), v, &d, &oldd);
     *buff = '\0';
   }
 }
