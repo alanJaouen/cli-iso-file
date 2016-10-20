@@ -112,11 +112,9 @@ void interactive(struct iso_prim_voldesc *v)
   }
 }
 
-int runfile(int iso, int piped, char *buff)
+int runfile(int iso,  char *buff)
 {
   printf("I should run the file\n");
-  //size_t fsize = st.st_size;
-  //char *instr = mmap()
   return 0;
 }
 
@@ -140,13 +138,12 @@ int main(int argc, char **argv)
     if (st.st_size != 0)
     {
       char buff[st.st_size];
-      read(STDIN_FILENO, &buff,  st.st_size);
+      read(STDIN_FILENO, &buff,  st.st_size);//TODO - des truc
       fflush(stdin);
       printf("size = %zu piped:\n%smyEOF\n",st.st_size,  buff);//return 3;
-      int piped = open(buff,  O_RDONLY);
       if (iso != -1)
-        runfile(iso, piped, buff);
-      else
+        runfile(iso, buff);
+      else //TODO TTY
         interactive(v);
     }
     else if (iso != -1 && isatty(STDIN_FILENO))
