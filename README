@@ -12,4 +12,4 @@ my_read_iso [file] [< commands]
 
 ## Tests
 
-
+test/test.sh <path to binary to compare>
