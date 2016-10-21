@@ -6,6 +6,7 @@ ret='\033[0m'
 bold='\033[1;1m'
 
 bin='../my_read_iso'
+bin2="../$1"
 
 print_color()
 {
@@ -14,8 +15,7 @@ print_color()
 
 cd tests
 
-nb=0
-fa=0
+$(mkisofs -allow-leading-dots -o iso.iso iso)
 
 for dir in *; do
   [ ! -d "$dir" ] && continue;
@@ -24,24 +24,17 @@ for dir in *; do
   print_color "$bold" "========== $dir =========="
   echo
 
-
-  ((nb=$nb + 1))
   $($bin iso.iso < "$dir/commands" > "/tmp/ACUmulateur")
+  $($bin2 iso.iso < "$dir/commands" > "/tmp/ACUmulateur2")
 
-  if [ "$(diff "$dir/res" "/tmp/ACUmulateur")" == "" ]; then
+  if [ "$(diff "/tmp/ACUmulateur2" "/tmp/ACUmulateur")" = "" ]; then
     printf '%s - %s\n' "$(print_color "$green" "OK")" "$dir"
   else
-    ((fa=$fa + 1))
     printf '%s - %s\n' "$(print_color "$red" "KO")" "$dir"
-    diff "/tmp/ACUmulateur" "$dir/res" -u
+    diff "/tmp/ACUmulateur2" "/tmp/ACUmulateur" -u
   fi
 
   printf "\n"
 done
 
-if [ $nb -ne 0 ]; then
-  printf '%s tests failed on %s tests done\n' "$(print_color "$red" "$fa")" \
-    "$(print_color "$green" "$nb")"
-fi
-
-rm "$name1" "$name2"
+rm iso.iso
