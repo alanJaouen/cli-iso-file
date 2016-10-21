@@ -32,12 +32,12 @@ void cat(struct iso_dir *d, char *s, struct iso_prim_voldesc *v)
   struct iso_dir *f = get_file(d, s);
   if (!f)
   {
-    warnx("file '%s' doesn't exist", s); //TODO check
+    warnx("file '%s' doesn't exist", s);
     return;
   }
   if (f->type != 0 && f->type != 1)
   {
-    warnx("file '%s' is not a file", s); //TODO check
+    warnx("file '%s' is not a file", s);
     return;
   }
   void *p = v;
@@ -67,6 +67,20 @@ void get(struct iso_dir *d, char *s, struct iso_prim_voldesc *v)
   write(fd, c, f->file_size.le);
 }
 
+void exec2(char *str, struct iso_prim_voldesc *v, struct iso_dir **d,
+   struct iso_dir **oldd)
+{
+  if (!strcmp(str, "tree"))
+    tree(*d, "", v);
+  else if (!strncmp(str, "get ", 4))
+    get(*d, str + 4, v);
+  else if (!strncmp(str, "cat ", 4))
+    cat(*d, str + 4, v);
+  else
+    warnx("my_read_iso: %s: unknown command", str);
+}
+
+
 void exec(char *str, struct iso_prim_voldesc *v, struct iso_dir **d,
    struct iso_dir **oldd)
 {
@@ -89,40 +103,7 @@ void exec(char *str, struct iso_prim_voldesc *v, struct iso_dir **d,
     strput(n->curr, n->prev);
     strput(n->prev,s);
   }
-  else if (!strcmp(str, "tree"))
-    tree(*d, "", v);
-  else if (!strncmp(str, "get ", 4))
-    get(*d, str + 4, v);
-  else if (!strncmp(str, "cat ", 4))
-    cat(*d, str + 4, v);
-  else
-    warnx("my_read_iso: %s: unknown command", str);
+  else exec2(str, v, d, oldd);
 }
 
-void exec2(char *str, struct iso_prim_voldesc *v, struct iso_dir **d,
-   struct iso_dir **oldd)
-{
-  if (!strncmp(str, "help", 4) && clean2(str))
-    show_help();
-  else if (!strcmp(str, "info") && clean2(str))
-    info(v);
-  else if (!strcmp(str, "ls") && clean2(str))
-    ls(*d);
-  else if (!strcmp(str,  "cd -"))
-    swap(d, oldd);
-  else if (!strncmp(str, "cd ", 3))
-    *d = cd(*d, str + 3, v, n);
-  else if (!strcmp(str, "cd\0"))
-  {
-    printf("C:hanging to 'root dir' directory\n");
-    *d = move_to_root(v);
-  }
-  else if (!strcmp(str, "tree"))
-    tree(*d, "", v);
-  else if (!strncmp(str, "get ", 4))
-    get(*d, str + 4, v);
-  else if (!strncmp(str, "cat ", 4))
-    cat(*d, str + 4, v);
-  else
-    warnx("my_read_iso: %s: unknown command", str);
-}
+
