@@ -6,6 +6,8 @@ struct name
 {
   char *curr;
   char *prev;
+  int dir;
+  int file;
 };
 
 extern struct name *n;
@@ -20,7 +22,7 @@ struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v, str
 
 void cat(struct iso_dir *d, char *s, struct iso_prim_voldesc *v);
 
-void tree(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v);
+void tree(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v, int f);
 
 void get(struct iso_dir *d, char *s, struct iso_prim_voldesc *v);
 

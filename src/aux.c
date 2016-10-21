@@ -86,7 +86,8 @@ void ls(struct iso_dir *d)
 }
 
 
-struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v, struct name *n)
+struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v,
+  struct name *n)
 {
   struct iso_dir *d = dir;
   while (d->dir_size > 0)
@@ -129,6 +130,34 @@ struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v, str
   return dir;
 }
 
+struct iso_dir *cd2(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v,
+  struct name *n)
+{
+  struct iso_dir *d = dir;
+  while (d->dir_size > 0)
+  {
+    char name[255];
+    get_name(d, name);
+    if (!strcmp(name, s))
+    {
+      void *p = v;
+      char *c = p;
+      c += (d->data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
+      p = c;
+      strput(n->prev, n->curr);
+      strput(n->curr, s);
+      return p;
+    }
+    void *p = d;
+    char *c = p;
+    c = c + d->dir_size;
+    p = c;
+    d = p;
+  }
+  warnx("unable to find '%s' directory entry", s);
+  return dir;
+}
+
 void strappend(char *dest, char *src)
 {
   int i = 0;
@@ -143,28 +172,52 @@ void strappend(char *dest, char *src)
   dest[i + j] = '\0';
 }
 
-
-
-void tree(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v)
+void tree2(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v, int f)
 {
+  char name[255];
+  get_name(d, name);
+  if ((d->type == ISO_FILE_ISDIR || d->type == 3))
+  {
+    printf("/\n");
+    char nprev[255] = "";
+    strappend(nprev, prev);
+    if (f)
+      strappend(nprev, " ");
+    strappend(nprev, "   ");
+    n->dir++;
+    tree(cd2(d, name, v, n), nprev, v, 1);
+  } 
+  else 
+  {
+    printf("\n");
+    n->file++;
+  }
+}
+
+void tree(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v, int f)
+{
+  if (!f)
+    printf(".\n");
+  char name[255];
   while (d->dir_size > 20)
   {
-    char name[255];
-    get_name(d, name);
-    printf("%s%s\n", prev, name);
-    if ((d->type == ISO_FILE_ISDIR || d->type == 3) && strcmp(name, ".")
-        && strcmp(name, ".."))
-    {
-      char nprev[255] = "";
-      strappend(nprev, prev);
-      strappend(nprev, "-");
-      tree(cd(d, name, v, n), nprev, v);
-    }
+    get_name(d, name);    
     void *p = d;
     char *c = p;
     c = c + d->dir_size;
     p = c;
-    d = p;
+    struct iso_dir *d2 = p;
+    if (strcmp(name, ".") && strcmp(name, ".."))
+    {
+      if (f)
+        printf("|%s", prev);
+      if (d2->dir_size > 20)
+        printf("|-- %s", name);
+      else
+        printf("+-- %s", name);
+        tree2(d, prev, v, f);
+    }
+    d = d2;
   }
 }
 

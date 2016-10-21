@@ -71,9 +71,7 @@ struct iso_dir *move_to_root(struct iso_prim_voldesc *v)
 
 void swap(struct iso_dir **a, struct iso_dir **b)
 {
-  char n[255];
-  get_name(*b, n);
-  printf("changing to '%s' directory\n", n);
+  printf("Changing to '%s' directory\n", n->prev);
   struct iso_dir *tmp = *a;
   *a = *b;
   *b = tmp;

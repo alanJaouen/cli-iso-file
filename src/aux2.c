@@ -70,7 +70,12 @@ void get(struct iso_dir *d, char *s, struct iso_prim_voldesc *v)
 void exec2(char *str, struct iso_prim_voldesc *v, struct iso_dir **d)
 {
   if (!strcmp(str, "tree"))
-    tree(*d, "", v);
+  {
+    n->file = 0;
+    n->dir = 0;
+    tree(*d, "", v, 0);
+    printf("\n%d directories, %d files\n", n->dir, n->file);
+  }
   else if (!strncmp(str, "get ", 4))
     get(*d, str + 4, v);
   else if (!strncmp(str, "cat ", 4))
@@ -92,10 +97,14 @@ void exec(char *str, struct iso_prim_voldesc *v, struct iso_dir **d,
   else if (!strcmp(str,  "cd -"))
     swap(d, oldd);
   else if (!strncmp(str, "cd ", 3))
+  {
+    *oldd = *d;
     *d = cd(*d, str + 3, v, n);
+  }
   else if (!strcmp(str, "cd\0"))
   {
     printf("Changing to 'root dir' directory\n");
+    *oldd = *d;
     *d = move_to_root(v);
     char s[200];
     strput(s, n->curr);
