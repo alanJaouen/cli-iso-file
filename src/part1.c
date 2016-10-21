@@ -132,6 +132,8 @@ int runfile(char *buff, struct iso_prim_voldesc *v)
     if (buff[global] == '\n')
     {
       cmd[i] = '\0';
+      if (!strcmp(cmd,  "quit"))
+        return 0;
       if (i >= 2)
         exec(clean(cmd), v, &d, &oldd);
       i = 0;
