@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include "iso9660.h"
+#include "aux.h"
 
 void removereturn(char *s)
 {
@@ -73,9 +74,9 @@ void ls(struct iso_dir *d)
     get_name(d, name);
     char isdir = (d->type == ISO_FILE_ISDIR || d->type == 3)? 'd': '-';
     char ish = (d->type == ISO_FILE_HIDDEN || d->type == 3)? 'h': '-';
-    printf("%c%c %9u %04d/%02d/%02d %02d:%02d %s %u\n",isdir, ish,
+    printf("%c%c %9u %04d/%02d/%02d %02d:%02d %s\n",isdir, ish,
        d->file_size.le, 1900 + d->date[0], d->date[1], d->date[2], d->date[3],
-       d->date[4], name, d->type);
+       d->date[4], name);
     void *p = d;
     char *c = p;
     c = c + d->dir_size;
@@ -85,13 +86,11 @@ void ls(struct iso_dir *d)
 }
 
 
-struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v)
+struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v, struct name *n)
 {
   struct iso_dir *d = dir;
   while (d->dir_size > 0)
   {
-    void *p = &(d->idf_len) + 1;
-    char *c = p;
     char name[255];
     get_name(d, name);
     if (!strcmp(name, s))
@@ -101,15 +100,27 @@ struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v)
         warnx("entry '%s' is not a directory", s);
         return dir;
       }
-      p = v;
-      c = p;
+      void *p = v;
+      char *c = p;
       c += (d->data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
       p = c;
-      printf("Changing to '%s' directory\n", s);
+      if (!strcmp(s, ".."))
+      {
+        printf("Changing to '%s' directory\n", n->prev);
+        strput(n->prev, n->curr);
+      }
+      else if (!strcmp(s, "."))
+        printf("Changing to '%s' directory\n", n->curr);
+      else 
+      {
+        printf("Changing to '%s' directory\n", s);
+        strput(n->prev, n->curr);
+        strput(n->curr, s);
+      }
       return p;
     }
-    p = d;
-    c = p;
+    void *p = d;
+    char *c = p;
     c = c + d->dir_size;
     p = c;
     d = p;
@@ -132,22 +143,7 @@ void strappend(char *dest, char *src)
   dest[i + j] = '\0';
 }
 
-struct iso_dir *get_file(struct iso_dir *d, char *s)
-{
-  while (d->dir_size > 20)
-  {
-    char name[255];
-    get_name(d, name);
-    if (!strcmp(name, s))
-      return d;
-    void *p = d;
-    char *c = p;
-    c = c + d->dir_size;
-    p = c;
-    d = p;
-  }
-  return NULL;
-}
+
 
 void tree(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v)
 {
@@ -162,7 +158,7 @@ void tree(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v)
       char nprev[255] = "";
       strappend(nprev, prev);
       strappend(nprev, "-");
-      tree(cd(d, name, v), nprev, v);
+      tree(cd(d, name, v, n), nprev, v);
     }
     void *p = d;
     char *c = p;
@@ -172,42 +168,4 @@ void tree(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v)
   }
 }
 
-void cat(struct iso_dir *d, char *s, struct iso_prim_voldesc *v)
-{
-  struct iso_dir *f = get_file(d, s);
-  if (!f)
-  {
-    warnx("file '%s' doesn't exist", s); //TODO check
-    return;
-  }
-  if (f->type != 0 && f->type != 1)
-  {
-    warnx("file '%s' is not a file", s); //TODO check
-    return;
-  }
-  void *p = v;
-  char *c = p;
-  c += (f->data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
-  for (uint32_t i = 0; i < f->file_size.le; ++i)
-    printf("%c", c[i]);
-}
 
-void get(struct iso_dir *d, char *s, struct iso_prim_voldesc *v)
-{
-  struct iso_dir *f = get_file(d, s);
-  if (!f)
-  {
-    warnx("unable to find '%s' entry", s);
-    return;
-  }
-  if (f->type != 0 && f->type != 1)
-  {
-    warnx("entry '%s' is a directory", s);
-    return;
-  }
-  int fd = open(s, O_CREAT|O_TRUNC|O_WRONLY, 0666);
-  void *p = v;
-  char *c = p;
-  c += (f->data_blk.le - ISO_PRIM_VOLDESC_BLOCK) * ISO_BLOCK_SIZE;
-  write(fd, c, f->file_size.le);
-}

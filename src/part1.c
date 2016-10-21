@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
+#define _BSD_SOURCE
 #include <stdio.h>
 #include <stddef.h>
 #include <sys/types.h>
@@ -11,6 +12,18 @@
 #include "iso9660.h"
 #include "aux.h"
 
+struct name *n;
+
+void strput(char *dest, char *s)
+{
+  int i = 0;
+  while (s[i])
+  {
+    dest[i] = s[i];
+    ++i;
+  }
+  dest[i] = '\0';
+}
 
 char *clean(char *s)
 {
@@ -66,33 +79,7 @@ void swap(struct iso_dir **a, struct iso_dir **b)
   *b = tmp;
 }
 
-void exec(char *str, struct iso_prim_voldesc *v, struct iso_dir **d,
-   struct iso_dir **oldd)
-{
-  if (!strncmp(str, "help", 4) && clean2(str))
-    show_help();
-  else if (!strcmp(str, "info") && clean2(str))
-    info(v);
-  else if (!strcmp(str, "ls") && clean2(str))
-    ls(*d);
-  else if (!strcmp(str,  "cd -"))
-    swap(d, oldd);
-  else if (!strncmp(str, "cd ", 3))
-    *d = cd(*d, str + 3, v);
-  else if (!strcmp(str, "cd\0"))
-  {
-    printf("changing to 'root dir' directory\n");
-    *d = move_to_root(v);
-  }
-  else if (!strcmp(str, "tree"))
-    tree(*d, "", v);
-  else if (!strncmp(str, "get ", 4))
-    get(*d, str + 4, v);
-  else if (!strncmp(str, "cat ", 4))
-    cat(*d, str + 4, v);
-  else
-    warnx("my_read_iso: %s: unknown command", str);
-}
+
 
 int checkiso(int iso, char **argv, struct iso_prim_voldesc **v)
 {
@@ -116,12 +103,11 @@ int checkiso(int iso, char **argv, struct iso_prim_voldesc **v)
   return 0;
 }
 
-
 void interactive(struct iso_prim_voldesc *v)
 {
   struct iso_dir *d = move_to_root(v);
   struct iso_dir *oldd = d;
-  while (1)
+  while (42)
   {
     char buff[255] = "";
     printf("> ");
@@ -135,9 +121,26 @@ void interactive(struct iso_prim_voldesc *v)
   }
 }
 
-int runfile(int iso,  char *buff)
+int runfile(char *buff, struct iso_prim_voldesc *v)
 {
-  printf("I should run the file\n");
+  struct iso_dir *d = move_to_root(v);
+  struct iso_dir *oldd = d;
+  char cmd[65];
+  int i = 0;
+  int global = 0;
+  while (buff[global])
+  {
+    cmd[i] = buff[global];
+    if (buff[global] == '\n')
+    {
+      cmd[i] = '\0';
+      if (i >= 2)
+        exec(clean(cmd), v, &d, &oldd);
+      i = 0;
+    }
+    else ++i;
+    ++global;
+  }
   return 0;
 }
 
@@ -150,23 +153,28 @@ int main(int argc, char **argv)
   }
   if (argc == 2)
   {
+    n = mmap(NULL, 1, PROT_READ|PROT_WRITE, MAP_ANON|MAP_PRIVATE, -1, 0);
+    n->curr = mmap(NULL, 1, PROT_READ|PROT_WRITE, MAP_ANON|MAP_PRIVATE, -1, 0);
+    n->prev = mmap(NULL, 1, PROT_READ|PROT_WRITE, MAP_ANON|MAP_PRIVATE, -1, 0);
+    strput(n->curr, "root dir");
+    strput(n->prev, "root dir");
     int iso = open(argv[1], O_RDONLY);
     struct iso_prim_voldesc *v = NULL;
     if (checkiso(iso, argv, &v))
       return 1;
     if (v == NULL)
-      printf("non\n");
+      return 1;
     struct stat st;
     fstat(STDIN_FILENO, &st);
     if (st.st_size != 0)
     {
-      char buff[st.st_size];
+      char buff[st.st_size + 1];
+      buff[st.st_size] = '\0';
       read(STDIN_FILENO, &buff,  st.st_size);//TODO - des truc
       fflush(stdin);
-      printf("size = %zu piped:\n%smyEOF\n",st.st_size,  buff);//return 3;
       if (iso != -1)
-        runfile(iso, buff);
-      else //TODO TTY
+        runfile(buff, v);
+      else if (isatty(STDIN_FILENO))
         interactive(v);
     }
     else if (iso != -1 && isatty(STDIN_FILENO))
