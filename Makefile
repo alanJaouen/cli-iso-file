@@ -1,6 +1,6 @@
 CC= gcc
 CFLAGS = -std=c99 -pedantic -Wextra -Wall -g -Iinclude/
-BIN_SRC= src/part1.c src/aux.c
+BIN_SRC= src/part1.c src/aux.c src/aux2.c
 BIN_OBJS= $(BIN_SRC:.c=.o)
 
 BIN=my_read_iso
@@ -8,8 +8,7 @@ BIN=my_read_iso
 all: $(BIN)
 
 check: $(BIN)
-	./tests/bin.sh
-
+	echo "./tests/test.sh <exec>"
 
 $(BIN): $(BIN_OBJS)
 	$(CC) $^ -o $@
