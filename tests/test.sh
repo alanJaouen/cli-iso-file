@@ -6,7 +6,7 @@ ret='\033[0m'
 bold='\033[1;1m'
 
 bin='../my_read_iso'
-bin2="../$1"
+bin2="$1"
 
 print_color()
 {
