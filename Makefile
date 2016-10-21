@@ -8,7 +8,7 @@ BIN=my_read_iso
 all: $(BIN)
 
 check: $(BIN)
-	echo "./tests/test.sh <exec>"
+	./tests/test.sh $(ex)
 
 $(BIN): $(BIN_OBJS)
 	$(CC) $^ -o $@
