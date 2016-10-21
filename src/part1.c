@@ -1,5 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
-#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <stddef.h>
 #include <sys/types.h>

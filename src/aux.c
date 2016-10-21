@@ -112,7 +112,7 @@ struct iso_dir *cd(struct iso_dir *dir, char *s, struct iso_prim_voldesc *v,
       }
       else if (!strcmp(s, "."))
         printf("Changing to '%s' directory\n", n->curr);
-      else 
+      else
       {
         printf("Changing to '%s' directory\n", s);
         strput(n->prev, n->curr);
@@ -186,8 +186,8 @@ void tree2(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v, int f)
     strappend(nprev, "   ");
     n->dir++;
     tree(cd2(d, name, v, n), nprev, v, 1);
-  } 
-  else 
+  }
+  else
   {
     printf("\n");
     n->file++;
@@ -201,7 +201,7 @@ void tree(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v, int f)
   char name[255];
   while (d->dir_size > 20)
   {
-    get_name(d, name);    
+    get_name(d, name);
     void *p = d;
     char *c = p;
     c = c + d->dir_size;
@@ -215,7 +215,7 @@ void tree(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v, int f)
         printf("|-- %s", name);
       else
         printf("+-- %s", name);
-        tree2(d, prev, v, f);
+      tree2(d, prev, v, f);
     }
     d = d2;
   }
