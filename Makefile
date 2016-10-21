@@ -1,5 +1,5 @@
 CC= gcc
-CFLAGS = -std=c99 -pedantic -Wextra -Wall -g -Iinclude/
+CFLAGS = -std=c99 -pedantic -Wextra -Wall -Werror -Iinclude/
 BIN_SRC= src/part1.c src/aux.c src/aux2.c
 BIN_OBJS= $(BIN_SRC:.c=.o)
 
