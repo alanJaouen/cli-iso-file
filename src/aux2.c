@@ -67,8 +67,7 @@ void get(struct iso_dir *d, char *s, struct iso_prim_voldesc *v)
   write(fd, c, f->file_size.le);
 }
 
-void exec2(char *str, struct iso_prim_voldesc *v, struct iso_dir **d,
-   struct iso_dir **oldd)
+void exec2(char *str, struct iso_prim_voldesc *v, struct iso_dir **d)
 {
   if (!strcmp(str, "tree"))
     tree(*d, "", v);
@@ -103,7 +102,7 @@ void exec(char *str, struct iso_prim_voldesc *v, struct iso_dir **d,
     strput(n->curr, n->prev);
     strput(n->prev,s);
   }
-  else exec2(str, v, d, oldd);
+  else exec2(str, v, d);
 }
 
 
