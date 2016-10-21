@@ -190,7 +190,6 @@ void tree2(struct iso_dir *d, char *prev, struct iso_prim_voldesc *v, int f)
       strappend(nprev, "|");
     else
       strappend(nprev, " ");
-    strappend(nprev, " ");
     strappend(nprev, "   ");
     n->dir++;
     tree(cd2(d, name, v, n), nprev, v, 1);
